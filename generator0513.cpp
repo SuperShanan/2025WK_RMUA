@@ -47,6 +47,7 @@ bool whreplan = false;  //是否可以进行重规划
 // std::vector<Eigen::Vector3d> list_original{{3.0,0,1.2},{4.0,2.50,0.9},{1.4,2.5,0.8},{1,1,1.0},{0,0,1.0}};//3.30redcircle chongguihua
 std::vector<Eigen::Vector3d> list_original{{2.2,0.57,1.30},{2.4,0,1.20}};//所有需要停的位置以及预先点
 std::vector<Eigen::Vector3d> over_circle;
+Eigen::Vector3d final_point;
 std_msgs::Int32 msg;
 
 // geometry_msgs::PoseStamped previous_position;
@@ -181,11 +182,16 @@ void houbanduan(int next_point)
         mean_vel = 0.8;
     }
 // cout<<"tmp_pt:"<<tmp_pt.position.x<<tmp_pt.position.y<<tmp_pt.position.z;
-if(duandian_index!=0){
+if(duandian_index!=13){
     tmp_pt.position.x=lst_replan[0];
     tmp_pt.position.y=lst_replan[1];
     tmp_pt.position.z=lst_replan[2];
     goal_list.poses.push_back(tmp_pt);      //3.插入旋转框后面的点
+}
+else{
+    final_point.x() = visual_point_position(0);
+    final_point.y() = visual_point_position(1);
+    final_point.z() = visual_point_position(2);
 }
     for (size_t i=next_point; i<=stop[duandian_index+1]; i++)  //4.加入剩余点至下一个stop
     {
@@ -237,7 +243,12 @@ void checktingjiping(const ros::TimerEvent &e){
     if(duandian_index!=13)return;
     //发送了最后一个点再计算距离
     Eigen::Vector3d odm={odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z};
-    if(odm - fianl_point < 0.1){final_pub.publish(1);}
+    if((odm - final_point).norm() < 0.1){
+        std_msgs::Int32 msg;
+        msg.data = 123; // 设置你想要发布的整数值
+        final_pub.publish(msg);
+        return;
+    }
 }
 void odom_goal_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
